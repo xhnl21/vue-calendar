@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fullcalendar Vue.js</title>
+    <link href="bootstrap/css/bootstrap.css" rel="stylesheet"/>
+    <link href="bootstrap/css/bootstrap-datetimepicker.css" rel="stylesheet"/>
+    <script src="js/jquery.js"></script>
+    <script src="js/moment.min.js"></script>
+    <script src="bootstrap/js/bootstrap.js"></script>
+    <script src="bootstrap/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="vue/vuecal.umd.min.js"></script>
+    <link href="vue/vuecal.css" rel="stylesheet">
+    <script src="vue/axios.min.js"></script>
+    <style type="text/css">
+      /* BASIC4 */ 
+      .vuecal__event {cursor: pointer;}
+
+      .vuecal__event-title {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin: 4px 0 8px;
+      }
+
+      .vuecal__event-time {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+      }
+
+      .vuecal__event-content {
+        font-style: italic;
+      }
+      /* BASIC4 */ 
+      /* BASIC3 */
+      .vuecal__event.primary {
+        color: #fff;
+        background-color: #337ab7;
+        border-color: #2e6da4;
+      }
+      .vuecal__event.success {
+        color: #fff;
+        background-color: #5cb85c;
+        border-color: #4cae4c;
+      }
+
+      .vuecal__event.info {
+        color: #fff;
+        background-color: #5bc0de;
+        border-color: #46b8da;
+      }
+
+      .vuecal__event.warning {
+        color: #fff;
+        background-color: #f0ad4e;
+        border-color: #eea236;
+      }  
+
+      .vuecal__event.danger {
+        color: #fff;
+        background-color: #d9534f;
+        border-color: #d43f3a;
+      }            
+      /* BASIC3 */
+
+      /* BASIC2 */
+      .vuecal {
+        margin: auto;
+        max-width: 1300px;
+        max-height: 662px;
+      }
+
+      .vuecal__event {
+        background-color: rgba(173, 216, 230, 0.5);
+        box-sizing: border-box;
+        padding: 5px;
+
+        &.lunch {
+          background: repeating-linear-gradient(45deg, transparent, transparent 10px, #f2f2f2 10px, #f2f2f2 20px);
+        }
+      }
+      /* BASIC2 */
+
+      /* BASIC */
+      * {font: 12px sans-serif;margin: 0;padding: 0;}
+      html, body, #app {height: 100%;}
+      #app {padding: 40px;box-sizing: border-box;}
+      a {position: fixed;top: 5px;right: 5px;color: #333;}
+      /* BASIC */
+
+
+      .modal-header, h4, .close {
+        background-color: #5cb85c;
+        color:white !important;
+        text-align: center;
+        font-size: 30px;
+      }
+      .modal-footer {
+        background-color: #f9f9f9;
+      }
+    </style>
+</head>
+
+<body>
+  <div id="app">
+   <a href="#" class="btn btn-primary" style="margin: auto;" id="btn4" @click="addPr">add</a>
+ 
+    <vue-cal 
+            class="vuecal--blue-theme"
+            selected-date="2020-05-06"
+            :time-from="10 * 60"
+            :time-to="23 * 60"
+            :disable-views="['years', 'year']"
+            events-on-month-view="events-on-month-view"
+            editable-events
+            :events="events"
+            active-view="month"
+            :on-event-click="onEventClick"
+             >
+        <template v-slot:event="{ event, view }">
+          <div class="vuecal__event-title" v-html="event.title"></div>
+          <hr/><em class="vuecal__event-time"><strong>Event start:</strong><span>{{ event.start.formatTime() }}</span><br/><strong>Event end:</strong><span>{{ event.end.formatTime() }}</span></em>
+        </template>         
+    </vue-cal>
+
+    <!-- Modal -->
+      <div class="modal fade" id="myModal" role="dialog" class="list-group-item-success">
+        <div class="modal-dialog">
+          <!-- Modal content-->
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+              <h4 class="modal-title" id="title-vue2">
+                <strong>
+                  {{ selectedEvent.title }} -
+                  {{ selectedEvent.start && selectedEvent.start.format('DD/MM/YYYY') }}
+                </strong>
+              </h4>
+
+              <h4 class="modal-title" id="title-vue" style="display: none;">
+                <strong>
+                  Edit Data
+                </strong>
+              </h4>
+            </div>
+            <div class="modal-body">
+              <strong>Event details:</strong>
+              <div class="content" id="form2">
+                <div class="row">
+                  <div class="col-md-12">
+                    <li class="list-group-item" v-html="selectedEvent.contentFull"></li>
+                    <li class="list-group-item" v-html="selectedEvent.content"></li>
+                  </div>
+                </div>
+                <hr>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="well well-sm">
+                      Event starts at: {{ selectedEvent.start && selectedEvent.start.formatTime() }}                      
+                    </div>                  
+                  </div>
+                  <div class="col-md-6">
+                    <div class="well well-sm">
+                      Event ends at: {{ selectedEvent.end && selectedEvent.end.formatTime() }}
+                    </div>                  
+                  </div>                
+                </div>
+              </div>
+
+              <div class="content" style="display: none;" id="form">
+                <hr>
+                <div class="row">
+                  <div class="col-md-6">
+                    <label>Title</label>
+                    <input type="text" class="form-control" id="title" placeholder="Title">
+                  </div>
+                  <div class="col-md-6">
+                    <label>Class</label>
+                    <input type="text" class="form-control"  id="class" placeholder="class">
+                  </div>
+                </div>
+                <hr>
+                <div class="row">
+                  <div class="col-md-12">
+                    <label>Content</label>
+                    <textarea id="content" class="form-control" placeholder="Content"></textarea>
+                  </div>
+                </div>
+                <hr>
+                <div class="row">
+                  <div class="col-md-12">
+                    <label>Content Full</label>
+                    <textarea id="contentfull" class="form-control" placeholder="Content Full"></textarea>              
+                  </div>
+                </div> 
+                <hr>             
+                <div class="row">
+                  <div class="col-md-3">
+                    <label>Start Date</label>
+                    <input type='text' class="form-control" name="start" id='start'/>
+                  </div>
+                  <div class="col-md-2">
+                    <label>Start Time</label>
+                    <input type='text' class="form-control" name="starttime" id='starttime'/>
+                  </div>
+                  <div class="col-md-3">
+                    <label>End Date</label>
+                    <input type='text' class="form-control" name="end" id='end'/>
+                  </div>
+                  <div class="col-md-2"> 
+                    <label>End Time</label>                   
+                    <input type='text' class="form-control" name="endtime" id='endtime'/>
+                  </div>
+                </div>    
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-info" id="btn" style="display: none;" @click="editsPr">Edit</button>
+              <button type="button" class="btn btn-info" id="btn2" @click="editPr">Edit</button>
+              <button type="button" class="btn btn-default" @click="close">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    <!-- Modal -->
+
+    <!-- Modal2 -->
+      <div class="modal fade" id="myModal2" role="dialog" class="list-group-item-success">
+        <div class="modal-dialog">
+          <!-- Modal content-->
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+              <h4 class="modal-title">
+                <strong>
+                  Data Save
+                </strong>
+              </h4>
+            </div>
+            <div class="modal-body">
+              <strong>Data Save</strong>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    <!-- Modal -->
+
+    <!-- Modal3 -->
+      <div class="modal fade" id="myModal3" role="dialog" class="list-group-item-success">
+        <div class="modal-dialog">
+          <!-- Modal content-->
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+              <h4 class="modal-title" id="title-vue">
+                <strong>
+                  Add Data
+                </strong>
+              </h4>
+            </div>
+            <div class="modal-body">
+              <strong>Event details:</strong>
+              <div class="content">
+                <hr>
+                <div class="row">
+                  <div class="col-md-6">
+                    <label>Title</label>
+                    <input type="text" class="form-control" id="titles" placeholder="Title">
+                  </div>
+                  <div class="col-md-6">
+                    <label>Class</label>
+                    <input type="text" class="form-control"  id="classs" placeholder="class">
+                  </div>
+                </div>
+                <hr>
+                <div class="row">
+                  <div class="col-md-12">
+                    <label>Content</label>
+                    <textarea id="content" class="form-control" placeholder="Content"></textarea>
+                  </div>
+                </div>
+                <hr>
+                <div class="row">
+                  <div class="col-md-12">
+                    <label>Content Full</label>
+                    <textarea id="contentfull" class="form-control" placeholder="Content Full"></textarea>              
+                  </div>
+                </div> 
+                <hr>             
+                <div class="row">
+                  <div class="col-md-3">
+                    <label>Start Date</label>
+                    <input type='text' class="form-control" name="start" id='starts1'/>
+                  </div>
+                  <div class="col-md-2">
+                    <label>Start Time</label>
+                    <input type='text' class="form-control" name="starttime" id='starttimes1'/>
+                  </div>
+                  <div class="col-md-3">
+                    <label>End Date</label>
+                    <input type='text' class="form-control" name="end" id='ends1'/>
+                  </div>
+                  <div class="col-md-2"> 
+                    <label>End Time</label>                   
+                    <input type='text' class="form-control" name="endtime" id='endtimes1'/>
+                  </div>
+                </div>    
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-info" id="btn2" @click="addPr">Add</button>
+              <button type="button" class="btn btn-default" @click="closet">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    <!-- Modal -->
+  </div>
+  <script src="vue/vue.js"></script>
+  <script type="text/javascript" src="vue/vuejs.js"></script>
+</body>
+</html>
